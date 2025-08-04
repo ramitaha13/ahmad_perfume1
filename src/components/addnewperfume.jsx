@@ -1,5 +1,7 @@
 import React, { useState, useRef } from "react";
-import { Sparkles, Save, RefreshCw, Eye, Copy, Upload } from "lucide-react";
+import { Sparkles, Save, RefreshCw, Upload } from "lucide-react";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { firestore } from "../firebase"; // Make sure this path is correct for your project
 
 const AddPerfumeForm = () => {
   const [formData, setFormData] = useState({
@@ -9,15 +11,17 @@ const AddPerfumeForm = () => {
     price: "",
     originalPrice: "",
     image: null,
+    imageUrl: "",
     imagePreview: "",
     description: "",
     badge: "",
     badgeColor: "bg-amber-500",
   });
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const fileInputRef = useRef(null);
-  const [generatedCode, setGeneratedCode] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
 
   const badgeColors = [
     { value: "bg-amber-500", label: "ذهبي" },
@@ -41,23 +45,86 @@ const AddPerfumeForm = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // For demo purposes, we'll create a preview URL
-    const imagePreview = URL.createObjectURL(file);
+    if (file && file.type.startsWith("image/")) {
+      // Create image preview URL
+      const imagePreview = URL.createObjectURL(file);
 
-    // In a real app, you would upload this to a server and get a URL back
-    // For now, we'll use the file name as a placeholder in the generated code
-    setFormData((prev) => ({
-      ...prev,
-      image: file,
-      imagePreview: imagePreview,
-    }));
+      setFormData((prev) => ({
+        ...prev,
+        image: file,
+        imagePreview: imagePreview,
+      }));
+
+      setUploadError("");
+    } else if (file) {
+      setUploadError("الرجاء اختيار ملف صورة");
+    }
   };
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
 
-  const generatePerfumeObject = () => {
+  const uploadImageToCloudinary = async () => {
+    if (!formData.image) return null;
+
+    setIsUploading(true);
+    setUploadError("");
+
+    try {
+      // Create a FormData object to send the file
+      const imageFormData = new FormData();
+      imageFormData.append("file", formData.image);
+      imageFormData.append("upload_preset", "rami123"); // Using your Cloudinary upload preset
+
+      // Upload to Cloudinary (image upload endpoint)
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/drrpopjnm/image/upload", // Your Cloudinary cloud name
+        {
+          method: "POST",
+          body: imageFormData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.secure_url) {
+        // Save the image URL
+        setFormData((prev) => ({
+          ...prev,
+          imageUrl: data.secure_url,
+        }));
+        return data.secure_url;
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (err) {
+      console.error("Error uploading to Cloudinary:", err);
+      setUploadError("فشل رفع الصورة. يرجى المحاولة مرة أخرى.");
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const saveToFirebase = async (perfumeData) => {
+    try {
+      // Add to the "perfumes" collection
+      await addDoc(collection(firestore, "perfumes"), {
+        ...perfumeData,
+        createdAt: serverTimestamp(),
+      });
+
+      setUploadSuccess(true);
+      return true;
+    } catch (firestoreError) {
+      console.error("Error saving to Firestore:", firestoreError);
+      setUploadError("فشل الحفظ في قاعدة البيانات");
+      return false;
+    }
+  };
+
+  const generatePerfumeObject = async () => {
     let discount = null;
     if (
       formData.originalPrice &&
@@ -69,11 +136,18 @@ const AddPerfumeForm = () => {
       );
     }
 
-    // In a real application, you would upload the image and get a URL
-    // For now, we'll use a placeholder or the default image
-    const imageUrl = formData.imagePreview
-      ? "uploaded_image_url.jpg" // This would be replaced with the actual uploaded URL
-      : "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=500&fit=crop";
+    // Upload image to Cloudinary if we have one
+    let imageUrl = formData.imageUrl;
+
+    if (formData.image && !imageUrl) {
+      imageUrl = await uploadImageToCloudinary();
+    }
+
+    // Use default image if no upload
+    if (!imageUrl) {
+      imageUrl =
+        "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=500&fit=crop";
+    }
 
     const perfumeObject = {
       id: Math.floor(Math.random() * 1000) + 4,
@@ -91,40 +165,66 @@ const AddPerfumeForm = () => {
       badgeColor: formData.badgeColor,
     };
 
-    const codeString = `{
-  id: ${perfumeObject.id},
-  name: "${perfumeObject.name}",
-  subtitle: "${perfumeObject.subtitle}",
-  category: "${perfumeObject.category}",
-  price: ${perfumeObject.price},
-  originalPrice: ${perfumeObject.originalPrice},
-  discount: ${perfumeObject.discount},
-  image: "${perfumeObject.image}",
-  description: "${perfumeObject.description}",
-  badge: "${perfumeObject.badge}",
-  badgeColor: "${perfumeObject.badgeColor}",
-},`;
-
-    setGeneratedCode(codeString);
     return perfumeObject;
   };
 
-  const handleGenerate = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.price || !formData.description) {
       alert("يرجى ملء الحقول المطلوبة: اسم العطر، السعر، والوصف");
       return;
     }
-    generatePerfumeObject();
-    setShowPreview(true);
-  };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedCode).then(() => {
-      alert("تم نسخ الكود بنجاح! يمكنك الآن إضافته إلى مصفوفة العطور في كودك");
-    });
+    setUploadError("");
+    setUploadSuccess(false);
+
+    // Generate the perfume object (this will also upload the image if needed)
+    const perfumeObject = await generatePerfumeObject();
+
+    // Save to Firebase
+    if (perfumeObject) {
+      const saved = await saveToFirebase(perfumeObject);
+      if (saved) {
+        // Keep success message visible but reset form fields
+        setUploadSuccess(true);
+
+        // Clean up the object URL first to prevent memory leaks
+        if (formData.imagePreview) {
+          URL.revokeObjectURL(formData.imagePreview);
+        }
+
+        // Reset form fields but don't reset success message
+        setFormData({
+          name: "",
+          subtitle: "",
+          category: "عطور نسائية",
+          price: "",
+          originalPrice: "",
+          image: null,
+          imageUrl: "",
+          imagePreview: "",
+          description: "",
+          badge: "",
+          badgeColor: "bg-amber-500",
+        });
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+
+        // Set a timer to clear the success message after 5 seconds
+        setTimeout(() => {
+          setUploadSuccess(false);
+        }, 5000);
+      }
+    }
   };
 
   const resetForm = () => {
+    // Clean up the object URL first to prevent memory leaks
+    if (formData.imagePreview) {
+      URL.revokeObjectURL(formData.imagePreview);
+    }
+
     setFormData({
       name: "",
       subtitle: "",
@@ -132,26 +232,19 @@ const AddPerfumeForm = () => {
       price: "",
       originalPrice: "",
       image: null,
+      imageUrl: "",
       imagePreview: "",
       description: "",
       badge: "",
       badgeColor: "bg-amber-500",
     });
-    setGeneratedCode("");
-    setShowPreview(false);
-  };
 
-  const getPreviewDiscount = () => {
-    if (
-      formData.originalPrice &&
-      parseFloat(formData.originalPrice) > parseFloat(formData.price)
-    ) {
-      return Math.round(
-        (1 - parseFloat(formData.price) / parseFloat(formData.originalPrice)) *
-          100
-      );
+    setUploadSuccess(false);
+    setUploadError("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
-    return null;
   };
 
   return (
@@ -181,6 +274,34 @@ const AddPerfumeForm = () => {
               <Save className="h-6 w-6 text-amber-500" />
               بيانات العطر
             </h2>
+
+            {/* Success Message */}
+            {uploadSuccess && (
+              <div className="p-4 bg-green-50 text-green-700 rounded-lg text-center mb-6 flex items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-green-500 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span className="font-medium">تم حفظ العطر بنجاح!</span>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {uploadError && (
+              <div className="p-4 bg-red-50 text-red-700 rounded-lg text-center mb-6">
+                {uploadError}
+              </div>
+            )}
 
             <div className="space-y-6">
               {/* Basic Info */}
@@ -301,13 +422,20 @@ const AddPerfumeForm = () => {
                         className="h-64 w-auto object-contain rounded-lg border border-gray-200"
                       />
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          if (formData.imagePreview) {
+                            URL.revokeObjectURL(formData.imagePreview);
+                          }
                           setFormData((prev) => ({
                             ...prev,
                             image: null,
                             imagePreview: "",
-                          }))
-                        }
+                            imageUrl: "",
+                          }));
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = "";
+                          }
+                        }}
                         className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                         title="إزالة الصورة"
                       >
@@ -391,50 +519,48 @@ const AddPerfumeForm = () => {
                   إعادة تعيين
                 </button>
                 <button
-                  onClick={handleGenerate}
-                  className="flex-1 bg-gradient-to-r from-amber-400 to-amber-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-amber-500 hover:to-amber-600 transition-all duration-200 flex items-center justify-center gap-2"
+                  onClick={handleSave}
+                  disabled={isUploading}
+                  className={`flex-1 bg-gradient-to-r from-amber-400 to-amber-500 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                    isUploading
+                      ? "opacity-70 cursor-not-allowed"
+                      : "hover:from-amber-500 hover:to-amber-600"
+                  }`}
                 >
-                  <Eye className="h-5 w-5" />
-                  اضف العطر
+                  {isUploading ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      جاري الحفظ...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-5 w-5" />
+                      حفظ العطر
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           </div>
-
-          {/* Generated Code Section */}
-          {showPreview && generatedCode && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 mx-auto w-full">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <Copy className="h-5 w-5 text-amber-500" />
-                  الكود المُولَّد
-                </h3>
-                <button
-                  onClick={copyToClipboard}
-                  className="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors flex items-center gap-2 text-sm"
-                >
-                  <Copy className="h-4 w-4" />
-                  نسخ الكود
-                </button>
-              </div>
-
-              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                <pre className="whitespace-pre-wrap">{generatedCode}</pre>
-              </div>
-
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold text-blue-900 mb-2">
-                  طريقة الاستخدام:
-                </h4>
-                <ol className="text-sm text-blue-800 space-y-1">
-                  <li>1. انسخ الكود أعلاه</li>
-                  <li>2. افتح ملف الكود الخاص بك</li>
-                  <li>3. أضف الكود داخل مصفوفة العطور (perfumes)</li>
-                  <li>4. احفظ الملف وستظهر العطر في المتجر</li>
-                </ol>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

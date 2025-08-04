@@ -1,64 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Heart, Share2, Search, Filter, Sparkles } from "lucide-react";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { firestore } from "../firebase"; // Make sure this path is correct for your project
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [searchTerm, setSearchTerm] = useState("");
+  const [perfumes, setPerfumes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const categories = ["الكل", "عطور نسائية", "عطور رجالية"];
 
-  const perfumes = [
-    {
-      id: 1,
-      name: "زهرة اللوتس",
-      subtitle: "عبير الحدائق",
-      category: "عطور نسائية",
-      price: 199,
-      originalPrice: null,
-      discount: null,
-      image:
-        "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=500&fit=crop",
-      description: "عطر منعش يحتوي على خلاصة زهرة اللوتس والليمون مع الريحان",
-      badge: "جديد",
-      badgeColor: "bg-amber-500",
-    },
-    {
-      id: 2,
-      name: "عود الملوك",
-      subtitle: "التراث العربي",
-      category: "عطور رجالية",
-      price: 450,
-      originalPrice: 599,
-      discount: 25,
-      image:
-        "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400&h=500&fit=crop",
-      description:
-        "عطر فاخر من العود الطبيعي مع نفحات من الزعفران والورد الطائفي",
-      badge: "خصم 25%",
-      badgeColor: "bg-red-500",
-    },
-    {
-      id: 3,
-      name: "ليلة صيف دافئة",
-      subtitle: "أزهار الشرق",
-      category: "عطور نسائية",
-      price: 299,
-      originalPrice: 399,
-      discount: 25,
-      image:
-        "https://images.unsplash.com/photo-1588405748880-12d1d2a59d75?w=400&h=500&fit=crop",
-      description:
-        "عطر ساحر يجمع بين رائحة الياسمين والورد مع لمسة من العنبر الدافئ",
-      badge: "خصم 25%",
-      badgeColor: "bg-red-500",
-    },
-  ];
+  // Fetch perfumes from Firebase
+  useEffect(() => {
+    const fetchPerfumes = async () => {
+      try {
+        setLoading(true);
+        // Create a query against the "perfumes" collection, ordered by creation time (newest first)
+        const perfumesQuery = query(
+          collection(firestore, "perfumes"),
+          orderBy("createdAt", "desc")
+        );
+
+        const querySnapshot = await getDocs(perfumesQuery);
+        const perfumesList = [];
+
+        querySnapshot.forEach((doc) => {
+          // Add the document ID and data to our perfumes list
+          perfumesList.push({
+            id: doc.id,
+            ...doc.data(),
+            // Handle Firestore timestamp
+            createdAt: doc.data().createdAt
+              ? doc.data().createdAt.toDate()
+              : new Date(),
+          });
+        });
+
+        setPerfumes(perfumesList);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching perfumes:", err);
+        setError("حدث خطأ أثناء تحميل العطور. يرجى المحاولة مرة أخرى.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPerfumes();
+  }, []);
 
   const filteredPerfumes = perfumes.filter((perfume) => {
     const matchesCategory =
       selectedCategory === "الكل" || perfume.category === selectedCategory;
     const matchesSearch = perfume.name
-      .toLowerCase()
+      ?.toLowerCase()
       .includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -121,81 +118,109 @@ const Home = () => {
 
       {/* Products Grid */}
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredPerfumes.map((perfume) => (
-            <div
-              key={perfume.id}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
-            >
-              {/* Product Image */}
-              <div className="relative overflow-hidden">
-                <img
-                  src={perfume.image}
-                  alt={perfume.name}
-                  className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin h-12 w-12 mx-auto mb-4 border-4 border-amber-400 border-t-transparent rounded-full"></div>
+            <p className="text-gray-600">جاري تحميل العطور...</p>
+          </div>
+        )}
 
-                {/* Badge */}
-                <div className="absolute top-4 right-4">
-                  <span
-                    className={`${perfume.badgeColor} text-white px-3 py-1 rounded-full text-sm font-medium`}
-                  >
-                    {perfume.badge}
-                  </span>
-                </div>
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <div className="bg-red-50 text-red-600 p-4 rounded-lg inline-block">
+              <p>{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 underline"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
+          </div>
+        )}
 
-                {/* Action Buttons */}
-                <div className="absolute top-4 left-4 flex flex-col space-y-2">
-                  <button className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-md">
-                    <Heart className="h-5 w-5 text-gray-600" />
-                  </button>
-                  <button className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-md">
-                    <Share2 className="h-5 w-5 text-gray-600" />
-                  </button>
-                </div>
-              </div>
+        {/* Perfumes Grid */}
+        {!loading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredPerfumes.map((perfume) => (
+              <div
+                key={perfume.id}
+                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+              >
+                {/* Product Image */}
+                <div className="relative overflow-hidden">
+                  <img
+                    src={perfume.image}
+                    alt={perfume.name}
+                    className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
 
-              {/* Product Info */}
-              <div className="p-6">
-                <div className="text-center mb-4">
-                  <span className="text-sm text-amber-600 font-medium">
-                    {perfume.category}
-                  </span>
-                  <h3 className="text-xl font-bold text-gray-900 mt-1">
-                    {perfume.name}
-                  </h3>
-                  <p className="text-gray-600 text-sm">{perfume.subtitle}</p>
-                </div>
-
-                <p className="text-gray-600 text-sm text-center mb-4 leading-relaxed">
-                  {perfume.description}
-                </p>
-
-                {/* Price */}
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center space-x-2 space-x-reverse">
-                    <span className="text-2xl font-bold text-gray-900">
-                      {perfume.price}₪
-                    </span>
-                    {perfume.originalPrice && (
-                      <span className="text-lg text-gray-400 line-through">
-                        {perfume.originalPrice}₪
+                  {/* Badge */}
+                  {perfume.badge && (
+                    <div className="absolute top-4 right-4">
+                      <span
+                        className={`${perfume.badgeColor} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                      >
+                        {perfume.badge}
                       </span>
-                    )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="absolute top-4 left-4 flex flex-col space-y-2">
+                    <button className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-md">
+                      <Heart className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <button className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-md">
+                      <Share2 className="h-5 w-5 text-gray-600" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Buy Button */}
-                <button className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-white py-3 px-6 rounded-full font-semibold hover:from-amber-500 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
-                  دعوة للشراء
-                </button>
+                {/* Product Info */}
+                <div className="p-6">
+                  <div className="text-center mb-4">
+                    <span className="text-sm text-amber-600 font-medium">
+                      {perfume.category}
+                    </span>
+                    <h3 className="text-xl font-bold text-gray-900 mt-1">
+                      {perfume.name}
+                    </h3>
+                    <p className="text-gray-600 text-sm">{perfume.subtitle}</p>
+                  </div>
+
+                  <p className="text-gray-600 text-sm text-center mb-4 leading-relaxed">
+                    {perfume.description}
+                  </p>
+
+                  {/* Price */}
+                  <div className="text-center mb-6">
+                    <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {perfume.price}₪
+                      </span>
+                      {perfume.originalPrice && (
+                        <span className="text-lg text-gray-400 line-through">
+                          {perfume.originalPrice}₪
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Buy Button */}
+                  <button className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-white py-3 px-6 rounded-full font-semibold hover:from-amber-500 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
+                    دعوة للشراء
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* No Results */}
-        {filteredPerfumes.length === 0 && (
+        {!loading && !error && filteredPerfumes.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <Search className="h-16 w-16 mx-auto mb-4" />
