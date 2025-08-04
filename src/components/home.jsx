@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Heart, Share2, Search, Filter, Sparkles } from "lucide-react";
+import {
+  Heart,
+  Share2,
+  Search,
+  Filter,
+  Sparkles,
+  LogIn,
+  User,
+  Menu,
+} from "lucide-react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { firestore } from "../firebase"; // Make sure this path is correct for your project
+import { Link } from "react-router-dom"; // Make sure you have react-router-dom installed
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
@@ -9,8 +19,27 @@ const Home = () => {
   const [perfumes, setPerfumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const categories = ["الكل", "عطور نسائية", "عطور رجالية"];
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setIsMobileMenuOpen(false);
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  // Handle mobile menu toggle (prevent event bubbling)
+  const toggleMobileMenu = (e) => {
+    e.stopPropagation();
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
   // Fetch perfumes from Firebase
   useEffect(() => {
@@ -63,7 +92,44 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-12 text-center">
+      <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-12 text-center relative">
+        {/* Mobile Menu Button - Only visible on small screens */}
+        <div
+          className="absolute top-4 left-4 md:hidden"
+          onClick={toggleMobileMenu}
+        >
+          <button className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-colors shadow-md">
+            <Menu className="h-6 w-6" />
+          </button>
+
+          {/* Mobile Menu Dropdown */}
+          {isMobileMenuOpen && (
+            <div
+              className="absolute left-0 top-12 bg-white rounded-lg shadow-xl py-2 min-w-[160px] z-10"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            >
+              <Link
+                to="/login"
+                className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <LogIn className="h-5 w-5 text-amber-500" />
+                <span>تسجيل الدخول</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Login Button - Hidden on small screens */}
+        <div className="absolute top-4 left-4 hidden md:block">
+          <Link
+            to="/login"
+            className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-white flex items-center gap-2 hover:bg-white/30 transition-colors shadow-md"
+          >
+            <LogIn className="h-5 w-5" />
+            <span>تسجيل الدخول</span>
+          </Link>
+        </div>
+
         <div className="flex items-center justify-center mb-4">
           <Sparkles className="h-8 w-8 text-white mx-2" />
           <h1 className="text-3xl font-bold text-white">متجر العطور الفاخرة</h1>
@@ -84,7 +150,7 @@ const Home = () => {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search Bar */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 max-w-md w-full">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
@@ -96,13 +162,13 @@ const Home = () => {
             </div>
 
             {/* Category Filter */}
-            <div className="flex items-center space-x-2 space-x-reverse">
-              <Filter className="h-5 w-5 text-gray-500" />
+            <div className="flex items-center space-x-2 space-x-reverse overflow-x-auto pb-2 w-full md:w-auto">
+              <Filter className="h-5 w-5 text-gray-500 flex-shrink-0" />
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-6 py-2 rounded-full transition-all duration-200 ${
+                  className={`px-6 py-2 rounded-full transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     selectedCategory === category
                       ? "bg-amber-400 text-white shadow-md"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
