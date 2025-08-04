@@ -8,9 +8,25 @@ import {
   List,
   ChevronRight,
 } from "lucide-react";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  getCountFromServer,
+} from "firebase/firestore";
+import { firestore } from "../firebase"; // Make sure this path is correct for your project
 
 const AdminDashboard = () => {
   const [username, setUsername] = useState("");
+  const [stats, setStats] = useState({
+    perfumes: 0,
+    users: 0,
+    orders: 0,
+  });
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   // Check if user is logged in
@@ -22,6 +38,52 @@ const AdminDashboard = () => {
     }
     setUsername(user);
   }, [navigate]);
+
+  // Fetch statistics from Firestore
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+
+        // Get perfumes count
+        const perfumesCountSnapshot = await getCountFromServer(
+          collection(firestore, "perfumes")
+        );
+        const perfumesCount = perfumesCountSnapshot.data().count;
+
+        // Get users count
+        const usersCountSnapshot = await getCountFromServer(
+          collection(firestore, "Users")
+        );
+        const usersCount = usersCountSnapshot.data().count;
+
+        // Get orders count - if you have an orders collection
+        // Assuming you have an orders collection. If not, keep it at 0
+        let ordersCount = 0;
+        try {
+          const ordersCountSnapshot = await getCountFromServer(
+            collection(firestore, "orders")
+          );
+          ordersCount = ordersCountSnapshot.data().count;
+        } catch (err) {
+          console.log("Orders collection may not exist yet:", err);
+          // Keep ordersCount as 0
+        }
+
+        setStats({
+          perfumes: perfumesCount,
+          users: usersCount,
+          orders: ordersCount,
+        });
+      } catch (err) {
+        console.error("Error fetching statistics:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Handle logout - remove user from localStorage and navigate to home
   const handleLogout = () => {
@@ -143,23 +205,47 @@ const AdminDashboard = () => {
 
         {/* Stats Summary */}
         <div className="mt-12 bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6 text-right">
             لوحة الإحصائيات
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="border border-gray-200 rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-amber-500 mb-2">0</div>
+            {/* Products Stats */}
+            <div className="border border-gray-200 rounded-lg p-4 text-center relative overflow-hidden">
+              {loading ? (
+                <div className="animate-pulse h-12 w-12 bg-amber-200 rounded-full mx-auto mb-2"></div>
+              ) : (
+                <div className="text-5xl font-bold text-amber-500 mb-2">
+                  {stats.perfumes}
+                </div>
+              )}
               <div className="text-gray-600">إجمالي المنتجات</div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-amber-50 rounded-full opacity-50"></div>
             </div>
 
-            <div className="border border-gray-200 rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-blue-500 mb-2">0</div>
+            {/* Users Stats */}
+            <div className="border border-gray-200 rounded-lg p-4 text-center relative overflow-hidden">
+              {loading ? (
+                <div className="animate-pulse h-12 w-12 bg-blue-200 rounded-full mx-auto mb-2"></div>
+              ) : (
+                <div className="text-5xl font-bold text-blue-500 mb-2">
+                  {stats.users}
+                </div>
+              )}
               <div className="text-gray-600">إجمالي المستخدمين</div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-50 rounded-full opacity-50"></div>
             </div>
 
-            <div className="border border-gray-200 rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-green-500 mb-2">0</div>
+            {/* Orders Stats */}
+            <div className="border border-gray-200 rounded-lg p-4 text-center relative overflow-hidden">
+              {loading ? (
+                <div className="animate-pulse h-12 w-12 bg-green-200 rounded-full mx-auto mb-2"></div>
+              ) : (
+                <div className="text-5xl font-bold text-green-500 mb-2">
+                  {stats.orders}
+                </div>
+              )}
               <div className="text-gray-600">طلبات جديدة</div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-green-50 rounded-full opacity-50"></div>
             </div>
           </div>
         </div>
