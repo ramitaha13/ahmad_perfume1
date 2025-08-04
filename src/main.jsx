@@ -4,6 +4,9 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 import Home from "./components/home.jsx";
 import Addnewperfume from "./components/addnewperfume.jsx";
+import Login from "./components/login.jsx";
+import Addnewuser from "./components/addnewuser.jsx";
+import Adminpage from "./components/adminpage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -21,6 +24,18 @@ const router = createBrowserRouter([
   {
     path: "/addnewperfume",
     element: <Addnewperfume />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/addnewuser",
+    element: <Addnewuser />,
+  },
+  {
+    path: "/adminpage",
+    element: <Adminpage />,
   },
 ]);
 
