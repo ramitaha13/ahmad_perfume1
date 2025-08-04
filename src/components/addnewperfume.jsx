@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
-import { Sparkles, Save, RefreshCw, Upload } from "lucide-react";
+import { Sparkles, Save, RefreshCw, Upload, ArrowRight } from "lucide-react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { firestore } from "../firebase"; // Make sure this path is correct for your project
+import { Link } from "react-router-dom";
 
 const AddPerfumeForm = () => {
   const [formData, setFormData] = useState({
@@ -253,7 +254,17 @@ const AddPerfumeForm = () => {
       dir="rtl"
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-8 w-full">
+      <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-8 w-full relative">
+        <div className="absolute top-4 right-4">
+          <Link
+            to="/adminpage"
+            className="flex items-center text-white hover:text-white/80 transition-colors"
+          >
+            <ArrowRight className="h-5 w-5 ml-1" />
+            <span className="hidden sm:inline">العودة للوحة التحكم</span>
+          </Link>
+        </div>
+
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="h-8 w-8 text-white mx-2" />

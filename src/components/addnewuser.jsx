@@ -154,7 +154,7 @@ const AddUser = () => {
       <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-8 text-center relative">
         <div className="absolute top-4 right-4">
           <Link
-            to="/managerPage"
+            to="/adminpage"
             className="flex items-center text-white hover:text-white/80 transition-colors"
           >
             <ArrowRight className="h-5 w-5 ml-1" />

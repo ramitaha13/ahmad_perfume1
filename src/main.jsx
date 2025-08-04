@@ -7,6 +7,7 @@ import Addnewperfume from "./components/addnewperfume.jsx";
 import Login from "./components/login.jsx";
 import Addnewuser from "./components/addnewuser.jsx";
 import Adminpage from "./components/adminpage.jsx";
+import ManagePerfumes from "./components/managePerfumes.jsx";
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
   {
     path: "/adminpage",
     element: <Adminpage />,
+  },
+  {
+    path: "/managePerfumes",
+    element: <ManagePerfumes />,
   },
 ]);
 

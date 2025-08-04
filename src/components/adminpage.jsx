@@ -5,7 +5,7 @@ import {
   UserPlus,
   ShoppingBag,
   LogOut,
-  Home,
+  List,
   ChevronRight,
 } from "lucide-react";
 
@@ -33,16 +33,6 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header */}
       <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-8 text-center relative">
-        <div className="absolute top-4 right-4">
-          <Link
-            to="/"
-            className="flex items-center text-white hover:text-white/80 transition-colors"
-          >
-            <Home className="h-5 w-5 ml-1" />
-            <span className="hidden sm:inline">العودة للمتجر</span>
-          </Link>
-        </div>
-
         <div className="absolute top-4 left-4">
           <button
             onClick={handleLogout}
@@ -65,7 +55,7 @@ const AdminDashboard = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-12">
         {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Add Perfume Card */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition-all duration-300">
             <div className="h-24 bg-gradient-to-r from-amber-400 to-amber-500 flex items-center justify-center">
@@ -83,6 +73,28 @@ const AdminDashboard = () => {
                 className="inline-flex items-center justify-center px-5 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors group-hover:bg-amber-600 w-full"
               >
                 <span>إضافة عطر جديد</span>
+                <ChevronRight className="h-5 w-5 mr-2 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Manage Perfumes Card */}
+          <div className="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition-all duration-300">
+            <div className="h-24 bg-gradient-to-r from-amber-300 to-amber-400 flex items-center justify-center">
+              <List className="h-12 w-12 text-white" />
+            </div>
+            <div className="p-6 text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                إدارة العطور
+              </h2>
+              <p className="text-gray-600 mb-6">
+                عرض وتعديل وحذف العطور الحالية
+              </p>
+              <Link
+                to="/managePerfumes"
+                className="inline-flex items-center justify-center px-5 py-3 bg-amber-400 text-white rounded-lg hover:bg-amber-500 transition-colors group-hover:bg-amber-500 w-full"
+              >
+                <span>إدارة العطور</span>
                 <ChevronRight className="h-5 w-5 mr-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
