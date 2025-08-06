@@ -187,13 +187,17 @@ const Checkout = () => {
       {/* Header */}
       <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-6">
         <div className="max-w-6xl mx-auto px-4">
-          <Link to="/" className="text-white flex items-center gap-2">
-            <ArrowRight className="h-5 w-5" />
-            <span>العودة إلى المتجر</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-white text-center mt-2">
-            {orderComplete ? "تم استلام طلبك" : "إتمام الطلب"}
-          </h1>
+          <div className="flex justify-between items-center">
+            <Link to="/" className="text-white flex items-center gap-2">
+              <ArrowRight className="h-5 w-5" />
+              <span className="hidden md:inline">العودة إلى المتجر</span>
+            </Link>
+            <h1 className="text-2xl font-bold text-white">
+              {orderComplete ? "تم استلام طلبك" : "إتمام الطلب"}
+            </h1>
+            <div className="w-5 md:hidden"></div>{" "}
+            {/* Spacer for mobile alignment */}
+          </div>
         </div>
       </div>
 
@@ -204,19 +208,9 @@ const Checkout = () => {
             <div className="mb-6">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
               شكراً لك! تم استلام طلبك بنجاح
             </h2>
-            <p className="text-gray-600 mb-4">
-              لقد تم استلام طلبك وسيتم معالجته قريباً. رقم طلبك هو:
-            </p>
-            <div className="bg-gray-100 rounded-lg p-3 mb-6">
-              <span className="font-mono font-bold text-lg">{orderId}</span>
-            </div>
-            <p className="text-gray-600 mb-8">
-              سيتم إرسال تفاصيل الطلب والشحن إلى بريدك الإلكتروني في غضون 24
-              ساعة.
-            </p>
             <button
               onClick={handleContinueShopping}
               className="bg-gradient-to-r from-amber-400 to-amber-500 text-white py-3 px-6 rounded-full font-semibold hover:from-amber-500 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg w-full max-w-xs mx-auto"
@@ -272,7 +266,7 @@ const Checkout = () => {
                     <span className="font-medium">{getSubtotal()}₪</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">رسوم التوصيل</span>
+                    <span className="text-gray-600">توصيل إلى منطقتك</span>
                     <span className="font-medium">
                       {getShippingCost() === 0
                         ? "مجاني"
