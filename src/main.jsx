@@ -8,6 +8,8 @@ import Login from "./components/login.jsx";
 import Addnewuser from "./components/addnewuser.jsx";
 import Adminpage from "./components/adminpage.jsx";
 import ManagePerfumes from "./components/managePerfumes.jsx";
+import Checkout from "./components/checkout.jsx";
+import Orders from "./components/orders.jsx";
 
 const router = createBrowserRouter([
   {
@@ -41,6 +43,14 @@ const router = createBrowserRouter([
   {
     path: "/managePerfumes",
     element: <ManagePerfumes />,
+  },
+  {
+    path: "/checkout",
+    element: <Checkout />,
+  },
+  {
+    path: "/orders",
+    element: <Orders />,
   },
 ]);
 
