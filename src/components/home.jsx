@@ -18,8 +18,6 @@ import {
   Instagram,
   Copy,
   MessageCircle,
-  Phone, // Added Phone icon
-  PhoneCall, // Added PhoneCall icon
 } from "lucide-react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { firestore } from "../firebase"; // Make sure this path is correct for your project
@@ -37,14 +35,9 @@ const Home = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [isPhoneTooltipVisible, setIsPhoneTooltipVisible] = useState(false);
 
   const shareMenuRef = useRef(null);
-  const phoneTooltipRef = useRef(null);
   const categories = ["الكل", "عطور نسائية", "عطور رجالية"];
-
-  // Phone number constant
-  const phoneNumber = "0552574773";
 
   // Initialize cart from localStorage
   useEffect(() => {
@@ -108,24 +101,6 @@ const Home = () => {
     };
   }, []);
 
-  // Close phone tooltip when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (
-        phoneTooltipRef.current &&
-        !phoneTooltipRef.current.contains(e.target) &&
-        !e.target.closest(".phone-button")
-      ) {
-        setIsPhoneTooltipVisible(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   // Reset copy success message after 2 seconds
   useEffect(() => {
     if (copySuccess) {
@@ -142,7 +117,6 @@ const Home = () => {
       if (e.key === "Escape") {
         setIsCartOpen(false);
         setShareMenuOpen(null);
-        setIsPhoneTooltipVisible(false);
       }
     };
 
@@ -168,30 +142,6 @@ const Home = () => {
   const toggleShareMenu = (e, perfumeId) => {
     e.stopPropagation();
     setShareMenuOpen(shareMenuOpen === perfumeId ? null : perfumeId);
-  };
-
-  // Toggle phone tooltip
-  const togglePhoneTooltip = (e) => {
-    e.stopPropagation();
-    setIsPhoneTooltipVisible(!isPhoneTooltipVisible);
-  };
-
-  // Handle phone call
-  const handlePhoneCall = () => {
-    window.location.href = `tel:${phoneNumber}`;
-  };
-
-  // Copy phone number to clipboard
-  const copyPhoneNumber = () => {
-    navigator.clipboard
-      .writeText(phoneNumber)
-      .then(() => {
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-      })
-      .catch((err) => {
-        console.error("Failed to copy: ", err);
-      });
   };
 
   // Share functions
@@ -396,17 +346,6 @@ const Home = () => {
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-amber-300 to-amber-400 py-12 text-center relative">
-        {/* Phone Number in header */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 hidden md:flex items-center justify-center">
-          <a
-            href={`tel:${phoneNumber}`}
-            className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-white flex items-center gap-2 hover:bg-white/30 transition-colors shadow-md"
-          >
-            <Phone className="h-5 w-5" />
-            <span>{phoneNumber}</span>
-          </a>
-        </div>
-
         {/* Mobile Menu Button - Only visible on small screens */}
         <div
           className="absolute top-4 left-4 md:hidden"
@@ -422,13 +361,6 @@ const Home = () => {
               className="absolute left-0 top-12 bg-white rounded-lg shadow-xl py-2 min-w-[160px] z-10"
               onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
             >
-              <a
-                href={`tel:${phoneNumber}`}
-                className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <Phone className="h-5 w-5 text-amber-500" />
-                <span>اتصل بنا: {phoneNumber}</span>
-              </a>
               <Link
                 to="/login"
                 className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
@@ -909,115 +841,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Floating Contact Button */}
-      <div className="fixed bottom-8 left-8 z-40">
-        <div className="relative">
-          <button
-            onClick={togglePhoneTooltip}
-            className="phone-button bg-amber-500 shadow-lg rounded-full w-14 h-14 flex items-center justify-center text-white hover:bg-amber-600 transition-colors"
-          >
-            <Phone className="h-6 w-6" />
-          </button>
-
-          {/* Phone Tooltip */}
-          {isPhoneTooltipVisible && (
-            <div
-              ref={phoneTooltipRef}
-              className="absolute bottom-16 left-0 bg-white rounded-lg shadow-xl p-4 w-64 transform -translate-x-1/4"
-            >
-              <div className="text-center mb-2">
-                <h3 className="font-bold text-gray-800">اتصل بنا</h3>
-                <p className="text-gray-600 text-sm">للطلب أو الاستفسار</p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <a
-                  href={`tel:${phoneNumber}`}
-                  className="flex items-center gap-2 bg-amber-100 text-amber-700 p-3 rounded-lg hover:bg-amber-200 transition-colors"
-                >
-                  <PhoneCall className="h-5 w-5" />
-                  <span className="font-bold">{phoneNumber}</span>
-                </a>
-
-                <button
-                  onClick={copyPhoneNumber}
-                  className="flex items-center gap-2 bg-gray-100 text-gray-700 p-3 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  <Copy className="h-5 w-5" />
-                  <span>نسخ الرقم</span>
-                </button>
-
-                <a
-                  href={`https://wa.me/${phoneNumber.replace(/^0/, "972")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-green-100 text-green-700 p-3 rounded-lg hover:bg-green-200 transition-colors"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  <span>واتساب</span>
-                </a>
-              </div>
-
-              {/* Copy Success Message */}
-              {copySuccess && (
-                <div className="mt-2 bg-green-100 text-green-700 p-2 rounded-md text-sm text-center">
-                  تم نسخ الرقم!
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Contact info in footer */}
-      <div className="bg-gray-800 text-white py-8">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-6 justify-between">
-            <div className="text-center md:text-right">
-              <h3 className="text-xl font-bold mb-2">متجر العطور الفاخرة</h3>
-              <p className="text-gray-400">
-                اكتشف مجموعة مختارة من أفضل العطور العربية والعالمية
-              </p>
-            </div>
-
-            <div className="text-center md:text-right">
-              <h3 className="text-lg font-bold mb-2">اتصل بنا</h3>
-              <div className="flex items-center justify-center md:justify-end gap-2 mb-2">
-                <Phone className="h-5 w-5 text-amber-400" />
-                <span>{phoneNumber}</span>
-              </div>
-              <div className="flex justify-center md:justify-end gap-3">
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <Facebook className="h-5 w-5" />
-                </a>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <Instagram className="h-5 w-5" />
-                </a>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <Twitter className="h-5 w-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-700 text-center text-gray-400 text-sm">
-            <p>
-              © {new Date().getFullYear()} متجر العطور الفاخرة. جميع الحقوق
-              محفوظة.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* CSS for Success Animation */}
       <style>{`
         .added-to-cart .success-overlay {
@@ -1068,20 +891,6 @@ const Home = () => {
         /* Apply the animation to copy success notification */
         .copy-success-notification {
           animation: fadeInOutSlide 2s ease-in-out;
-        }
-        
-        /* Floating button bounce animation */
-        @keyframes bounce {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-5px);
-          }
-        }
-        
-        .phone-button {
-          animation: bounce 2s ease-in-out infinite;
         }
       `}</style>
     </div>
