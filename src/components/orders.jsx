@@ -363,7 +363,7 @@ const Orders = () => {
                         <div className="md:col-span-1">
                           <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
                             <User className="h-4 w-4 ml-1 text-amber-500" />
-                            معلومات العميل
+                            معلومات الزبون
                           </h3>
                           <div className="space-y-2 text-sm">
                             <div className="flex items-start">

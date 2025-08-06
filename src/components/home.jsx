@@ -18,6 +18,7 @@ import {
   Instagram,
   Copy,
   MessageCircle,
+  Phone,
 } from "lucide-react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { firestore } from "../firebase"; // Make sure this path is correct for your project
@@ -35,9 +36,12 @@ const Home = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isCallMenuOpen, setIsCallMenuOpen] = useState(false);
 
   const shareMenuRef = useRef(null);
+  const callMenuRef = useRef(null);
   const categories = ["الكل", "عطور نسائية", "عطور رجالية"];
+  const phoneNumber = "0552574773";
 
   // Initialize cart from localStorage
   useEffect(() => {
@@ -83,7 +87,7 @@ const Home = () => {
     };
   }, []);
 
-  // Close share menu when clicking outside
+  // Close share menu and call menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -92,6 +96,14 @@ const Home = () => {
         !e.target.closest(".share-button")
       ) {
         setShareMenuOpen(null);
+      }
+
+      if (
+        callMenuRef.current &&
+        !callMenuRef.current.contains(e.target) &&
+        !e.target.closest(".call-button")
+      ) {
+        setIsCallMenuOpen(false);
       }
     };
 
@@ -117,6 +129,7 @@ const Home = () => {
       if (e.key === "Escape") {
         setIsCartOpen(false);
         setShareMenuOpen(null);
+        setIsCallMenuOpen(false);
       }
     };
 
@@ -142,6 +155,29 @@ const Home = () => {
   const toggleShareMenu = (e, perfumeId) => {
     e.stopPropagation();
     setShareMenuOpen(shareMenuOpen === perfumeId ? null : perfumeId);
+  };
+
+  // Toggle call menu
+  const toggleCallMenu = (e) => {
+    e.stopPropagation();
+    setIsCallMenuOpen(!isCallMenuOpen);
+  };
+
+  // Call functions
+  const makePhoneCall = () => {
+    window.location.href = `tel:${phoneNumber}`;
+    setIsCallMenuOpen(false);
+  };
+
+  const openWhatsApp = () => {
+    const message = encodeURIComponent(
+      "مرحباً، أود الاستفسار عن العطور المتوفرة"
+    );
+    window.open(
+      `https://wa.me/${phoneNumber.replace(/^0/, "972")}?text=${message}`,
+      "_blank"
+    );
+    setIsCallMenuOpen(false);
   };
 
   // Share functions
@@ -669,6 +705,42 @@ const Home = () => {
         )}
       </div>
 
+      {/* Floating Call/WhatsApp Button */}
+      <div className="fixed bottom-6 left-6 z-40">
+        <div className="relative">
+          {/* Main Call Button */}
+          <button
+            onClick={toggleCallMenu}
+            className="call-button w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center transform hover:scale-110"
+          >
+            <Phone className="h-6 w-6" />
+          </button>
+
+          {/* Call Menu */}
+          {isCallMenuOpen && (
+            <div
+              ref={callMenuRef}
+              className="absolute bottom-16 left-0 bg-white rounded-lg shadow-xl py-2 min-w-[160px] z-50"
+            >
+              <button
+                onClick={makePhoneCall}
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors w-full text-left"
+              >
+                <Phone className="h-5 w-5 text-green-500" />
+                <span>اتصال هاتفي</span>
+              </button>
+              <button
+                onClick={openWhatsApp}
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors w-full text-left"
+              >
+                <MessageCircle className="h-5 w-5 text-green-500" />
+                <span>واتساب</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Cart Sidebar */}
       <div
         className={`fixed top-0 left-0 w-full h-full z-50 ${
@@ -891,6 +963,23 @@ const Home = () => {
         /* Apply the animation to copy success notification */
         .copy-success-notification {
           animation: fadeInOutSlide 2s ease-in-out;
+        }
+
+        /* Floating action button pulse animation */
+        .call-button {
+          animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+          0% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+          }
         }
       `}</style>
     </div>
