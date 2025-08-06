@@ -824,7 +824,7 @@ const Home = () => {
                     to="/checkout"
                     className="bg-gradient-to-r from-amber-400 to-amber-500 text-white py-3 px-6 rounded-full font-semibold hover:from-amber-500 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg w-full block text-center"
                   >
-                    متابعة إلى الدفع
+                    متابعة إلى الطلب
                   </Link>
 
                   {/* Continue Shopping */}
