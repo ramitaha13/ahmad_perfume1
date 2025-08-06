@@ -59,9 +59,9 @@ const Checkout = () => {
     return subtotal > 300 ? 0 : 30;
   };
 
-  // Calculate total
+  // Calculate total (now only subtotal since shipping is TBD)
   const getTotal = () => {
-    return getSubtotal() + getShippingCost();
+    return getSubtotal(); // Only subtotal, shipping TBD
   };
 
   // Handle input change
@@ -148,7 +148,7 @@ const Checkout = () => {
           subtotal: item.price * item.quantity,
         })),
         subtotal: getSubtotal(),
-        shipping: getShippingCost(),
+        shipping: "TBD", // Shipping to be determined
         total: getTotal(),
         paymentMethod: formData.paymentMethod,
         status: "pending",
@@ -267,10 +267,8 @@ const Checkout = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">توصيل إلى منطقتك</span>
-                    <span className="font-medium">
-                      {getShippingCost() === 0
-                        ? "مجاني"
-                        : `${getShippingCost()}₪`}
+                    <span className="font-medium text-amber-600">
+                      يحدد لاحقاً
                     </span>
                   </div>
                   <div className="flex justify-between font-bold text-lg pt-2 border-t">
@@ -279,14 +277,12 @@ const Checkout = () => {
                   </div>
                 </div>
 
-                {/* Free Shipping Notice */}
-                {getShippingCost() > 0 && (
-                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-                    <p className="text-amber-700">
-                      أضف {300 - getSubtotal()}₪ أخرى للحصول على شحن مجاني!
-                    </p>
-                  </div>
-                )}
+                {/* Shipping Notice */}
+                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                  <p className="text-amber-700">
+                    سيتم تحديد تكلفة الشحن بناءً على منطقتك
+                  </p>
+                </div>
               </div>
             </div>
 
