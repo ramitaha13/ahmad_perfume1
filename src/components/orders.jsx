@@ -14,6 +14,7 @@ import {
   Calendar,
   DollarSign,
   AlertTriangle,
+  Trash2, // Added for delete icon
 } from "lucide-react";
 import {
   collection,
@@ -21,6 +22,8 @@ import {
   query,
   orderBy as firestoreOrderBy,
   Timestamp,
+  doc,
+  deleteDoc, // Import deleteDoc function
 } from "firebase/firestore";
 import { firestore } from "../firebase";
 
@@ -31,6 +34,8 @@ const Orders = () => {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date-desc");
+  const [deleting, setDeleting] = useState(false); // State to track delete operation
+  const [deleteError, setDeleteError] = useState(null); // State to track delete errors
 
   // Fetch orders from Firestore
   useEffect(() => {
@@ -93,6 +98,45 @@ const Orders = () => {
       setExpandedOrder(null);
     } else {
       setExpandedOrder(orderId);
+    }
+  };
+
+  // Handle order deletion
+  const handleDeleteOrder = async (orderId, event) => {
+    // Stop the event from propagating to parent elements
+    event.stopPropagation();
+
+    // Confirm with the user before deletion
+    if (
+      !window.confirm(
+        "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setDeleteError(null);
+
+      // Reference to the order document
+      const orderRef = doc(firestore, "orders", orderId);
+
+      // Delete the order document
+      await deleteDoc(orderRef);
+
+      // Remove the order from the local state
+      setOrders(orders.filter((order) => order.id !== orderId));
+
+      // If the deleted order was expanded, collapse it
+      if (expandedOrder === orderId) {
+        setExpandedOrder(null);
+      }
+    } catch (err) {
+      console.error("Error deleting order:", err);
+      setDeleteError("حدث خطأ أثناء حذف الطلب. يرجى المحاولة مرة أخرى.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -220,6 +264,16 @@ const Orders = () => {
           </div>
         )}
 
+        {/* Delete Error */}
+        {deleteError && (
+          <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 ml-2" />
+              <p>{deleteError}</p>
+            </div>
+          </div>
+        )}
+
         {/* No Orders */}
         {!loading && !error && filteredOrders.length === 0 && (
           <div className="text-center py-12">
@@ -278,6 +332,16 @@ const Orders = () => {
 
                         {/* Order Total */}
                         <div className="font-bold text-lg">{order.total}₪</div>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={(e) => handleDeleteOrder(order.id, e)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                          title="حذف الطلب"
+                          disabled={deleting}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
 
                         {/* Expand/Collapse Indicator */}
                         <div className="text-amber-500">
@@ -398,7 +462,15 @@ const Orders = () => {
 
                       {/* Order Actions */}
                       <div className="flex flex-wrap gap-2 justify-end mt-6 pt-4 border-t">
-                        {/* Order actions can be added here if needed in the future */}
+                        {/* Delete Order (alternative position) */}
+                        <button
+                          onClick={(e) => handleDeleteOrder(order.id, e)}
+                          className="flex items-center gap-1 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                          disabled={deleting}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>حذف الطلب</span>
+                        </button>
                       </div>
                     </div>
                   )}
