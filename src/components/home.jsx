@@ -12,13 +12,8 @@ import {
   Check,
   X,
   Trash2,
-  Facebook,
-  Twitter,
-  Link as LinkIcon,
-  Instagram,
-  Copy,
-  MessageCircle,
   Phone,
+  MessageCircle,
 } from "lucide-react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { firestore } from "../firebase"; // Make sure this path is correct for your project
@@ -34,11 +29,10 @@ const Home = () => {
   const [cart, setCart] = useState([]);
   const [addedToCart, setAddedToCart] = useState({});
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [shareMenuOpen, setShareMenuOpen] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [isCallMenuOpen, setIsCallMenuOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false); // New state to track sharing progress
 
-  const shareMenuRef = useRef(null);
   const callMenuRef = useRef(null);
   const categories = ["الكل", "عطور نسائية", "عطور رجالية"];
   const phoneNumber = "0552574773";
@@ -87,17 +81,9 @@ const Home = () => {
     };
   }, []);
 
-  // Close share menu and call menu when clicking outside
+  // Close call menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        shareMenuRef.current &&
-        !shareMenuRef.current.contains(e.target) &&
-        !e.target.closest(".share-button")
-      ) {
-        setShareMenuOpen(null);
-      }
-
       if (
         callMenuRef.current &&
         !callMenuRef.current.contains(e.target) &&
@@ -128,7 +114,6 @@ const Home = () => {
     const handleEscKey = (e) => {
       if (e.key === "Escape") {
         setIsCartOpen(false);
-        setShareMenuOpen(null);
         setIsCallMenuOpen(false);
       }
     };
@@ -151,10 +136,75 @@ const Home = () => {
     setIsCartOpen(!isCartOpen);
   };
 
-  // Toggle share menu
+  // Improved share content function with debounce to prevent multiple calls
+  const shareContent = (perfume) => {
+    // If already sharing, do nothing
+    if (isSharing) {
+      console.log("Share operation already in progress");
+      return;
+    }
+
+    const shareData = {
+      title: `${perfume.name} - متجر العطور الفاخرة`,
+      text: `تحقق من ${perfume.name} في متجر العطور الفاخرة!`,
+      url: window.location.href,
+    };
+
+    // Check if Web Share API is available
+    if (navigator.share) {
+      setIsSharing(true); // Set sharing flag
+
+      navigator
+        .share(shareData)
+        .then(() => {
+          console.log("Successfully shared");
+        })
+        .catch((error) => {
+          // Only show an error message if needed
+        })
+        .finally(() => {
+          // Reset sharing state after a short delay to ensure everything is complete
+          setTimeout(() => {
+            setIsSharing(false);
+          }, 300);
+        });
+    } else {
+      // For browsers without Web Share API, directly perform the share actions
+      // Option 1: Open a new window to share via WhatsApp
+      const text = `تحقق من ${perfume.name} في متجر العطور الفاخرة!\n${window.location.href}`;
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+
+      // Option 2: Copy to clipboard (uncomment if preferred)
+      /*
+      navigator.clipboard
+        .writeText(window.location.href)
+        .then(() => {
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        })
+        .catch((err) => {
+          console.error("Failed to copy: ", err);
+        });
+      */
+    }
+  };
+
+  // Improved toggle share function with guard clause
   const toggleShareMenu = (e, perfumeId) => {
     e.stopPropagation();
-    setShareMenuOpen(shareMenuOpen === perfumeId ? null : perfumeId);
+
+    // If already sharing, ignore the click
+    if (isSharing) {
+      return;
+    }
+
+    // Find the perfume object
+    const perfume = perfumes.find((p) => p.id === perfumeId);
+
+    if (perfume) {
+      shareContent(perfume);
+    }
   };
 
   // Toggle call menu
@@ -178,50 +228,6 @@ const Home = () => {
       "_blank"
     );
     setIsCallMenuOpen(false);
-  };
-
-  // Share functions
-  const shareOnFacebook = (perfume) => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      window.location.href
-    )}&quote=${encodeURIComponent(
-      `تحقق من ${perfume.name} في متجر العطور الفاخرة!`
-    )}`;
-    window.open(url, "_blank");
-    setShareMenuOpen(null);
-  };
-
-  const shareOnTwitter = (perfume) => {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `تحقق من ${perfume.name} في متجر العطور الفاخرة!`
-    )}&url=${encodeURIComponent(window.location.href)}`;
-    window.open(url, "_blank");
-    setShareMenuOpen(null);
-  };
-
-  const shareOnInstagram = () => {
-    // Instagram doesn't have a direct share URL, but we can redirect to Instagram
-    window.open("https://www.instagram.com/", "_blank");
-    setShareMenuOpen(null);
-  };
-
-  const shareOnWhatsApp = (perfume) => {
-    const text = `تحقق من ${perfume.name} في متجر العطور الفاخرة!\n${window.location.href}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
-    setShareMenuOpen(null);
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard
-      .writeText(window.location.href)
-      .then(() => {
-        setCopySuccess(true);
-        setShareMenuOpen(null);
-      })
-      .catch((err) => {
-        console.error("Failed to copy: ", err);
-      });
   };
 
   // Fetch perfumes from Firebase
@@ -540,60 +546,18 @@ const Home = () => {
                     </div>
                   )}
 
-                  {/* Share Button */}
-                  <div className="absolute top-4 left-4 flex flex-col space-y-2">
+                  {/* Share Button - Simplified with no dropdown */}
+                  <div className="absolute top-4 left-4">
                     <button
                       onClick={(e) => toggleShareMenu(e, perfume.id)}
-                      className="share-button p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-md relative"
+                      className="share-button p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-md"
+                      aria-label="مشاركة"
+                      disabled={isSharing} // Disable button while sharing is in progress
                     >
                       <Share2 className="h-5 w-5 text-gray-600" />
                     </button>
 
-                    {/* Share Menu - Separate from button */}
-                    {shareMenuOpen === perfume.id && (
-                      <div
-                        ref={shareMenuRef}
-                        className="absolute left-0 top-12 mt-2 bg-white rounded-lg shadow-xl py-2 min-w-[140px] z-20"
-                      >
-                        <div
-                          onClick={() => shareOnFacebook(perfume)}
-                          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors w-full text-right cursor-pointer"
-                        >
-                          <Facebook className="h-4 w-4 text-blue-600" />
-                          <span>فيسبوك</span>
-                        </div>
-                        <div
-                          onClick={() => shareOnTwitter(perfume)}
-                          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors w-full text-right cursor-pointer"
-                        >
-                          <Twitter className="h-4 w-4 text-sky-500" />
-                          <span>تويتر</span>
-                        </div>
-                        <div
-                          onClick={() => shareOnInstagram()}
-                          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors w-full text-right cursor-pointer"
-                        >
-                          <Instagram className="h-4 w-4 text-pink-600" />
-                          <span>انستجرام</span>
-                        </div>
-                        <div
-                          onClick={() => shareOnWhatsApp(perfume)}
-                          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors w-full text-right cursor-pointer"
-                        >
-                          <MessageCircle className="h-4 w-4 text-green-500" />
-                          <span>واتساب</span>
-                        </div>
-                        <div
-                          onClick={copyToClipboard}
-                          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors w-full text-right cursor-pointer"
-                        >
-                          <LinkIcon className="h-4 w-4 text-gray-600" />
-                          <span>نسخ الرابط</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Copy Success Message */}
+                    {/* Copy Success Message - Only shown when using clipboard fallback */}
                     {copySuccess && (
                       <div className="absolute left-0 top-12 mt-1 bg-green-500 text-white text-xs rounded-md py-1 px-2 min-w-max copy-success-notification">
                         تم نسخ الرابط!
