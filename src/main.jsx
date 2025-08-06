@@ -10,6 +10,7 @@ import Adminpage from "./components/adminpage.jsx";
 import ManagePerfumes from "./components/managePerfumes.jsx";
 import Checkout from "./components/checkout.jsx";
 import Orders from "./components/orders.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 const router = createBrowserRouter([
   {
@@ -26,7 +27,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/addnewperfume",
-    element: <Addnewperfume />,
+    element: (
+      <ProtectedRoute>
+        <Addnewperfume />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/login",
@@ -34,15 +39,27 @@ const router = createBrowserRouter([
   },
   {
     path: "/addnewuser",
-    element: <Addnewuser />,
+    element: (
+      <ProtectedRoute>
+        <Addnewuser />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/adminpage",
-    element: <Adminpage />,
+    element: (
+      <ProtectedRoute>
+        <Adminpage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/managePerfumes",
-    element: <ManagePerfumes />,
+    element: (
+      <ProtectedRoute>
+        <ManagePerfumes />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/checkout",
@@ -50,7 +67,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/orders",
-    element: <Orders />,
+    element: (
+      <ProtectedRoute>
+        <Orders />
+      </ProtectedRoute>
+    ),
   },
 ]);
 
